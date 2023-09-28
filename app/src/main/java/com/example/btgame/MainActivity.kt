@@ -16,16 +16,16 @@ import com.example.btgame.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private var my_bluetoothAdapter: BluetoothAdapter? = null
-    private lateinit var my_pairedDevices: Set<BluetoothDevice>
+    private var myBluetoothAdapter: BluetoothAdapter? = null
+    private lateinit var myPairedDevices: Set<BluetoothDevice>
     private val REQUEST_ENABLE_BLUETOOTH = 1
-    private var isHost : Boolean = false
+    private var isHost: Boolean = false
 
     private lateinit var binding: ActivityMainBinding
 
     companion object {
-        val EXTRA_ADDRESS: String = "Device_address"
-        val HOST_DEVICE : String = "isHost"
+        const val EXTRA_ADDRESS: String = "Device_address"
+        const val HOST_DEVICE: String = "isHost"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,121 +33,91 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        my_bluetoothAdapter= BluetoothAdapter.getDefaultAdapter()
+        // Get the default Bluetooth adapter
+        myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
-        if (my_bluetoothAdapter==null){
+        // Check if the device supports Bluetooth
+        if (myBluetoothAdapter == null) {
             Toast.makeText(this, "This device doesn't support Bluetooth", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (!my_bluetoothAdapter!!.isEnabled){
+        // Check if Bluetooth is enabled, and if not, request to enable it
+        if (!myBluetoothAdapter!!.isEnabled) {
             val enableBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             if (ActivityCompat.checkSelfPermission(
                     this,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+                // TODO: Consider requesting permissions here
                 return
             }
-            startActivityForResult(enableBluetoothIntent,REQUEST_ENABLE_BLUETOOTH)
+            startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BLUETOOTH)
         }
+
+        // Show the list of paired devices and set up event listeners
         showPairedDevices()
 
-        binding.btnRefresh.setOnClickListener{
+        // Set a click listener for the "Refresh" button to refresh the paired device list
+        binding.btnRefresh.setOnClickListener {
             showPairedDevices()
         }
-        binding.btnHost.setOnClickListener{
+
+        // Set a click listener for the "Host Game" button to start hosting a game
+        binding.btnHost.setOnClickListener {
             hostGame()
         }
-
     }
 
-    private fun showPairedDevices(){
+    private fun showPairedDevices() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+            // TODO: Consider requesting permissions here
             return
         }
-        my_pairedDevices = my_bluetoothAdapter!!.bondedDevices
-        val deviceList : ArrayList<BluetoothDevice> = ArrayList()
-        val deviceNameList : ArrayList<String> = ArrayList()
+        // Get the list of paired Bluetooth devices
+        myPairedDevices = myBluetoothAdapter!!.bondedDevices
+        val deviceList: ArrayList<BluetoothDevice> = ArrayList()
+        val deviceNameList: ArrayList<String> = ArrayList()
 
-        if (!my_pairedDevices.isEmpty()){
-            for (device : BluetoothDevice in my_pairedDevices){
+        if (myPairedDevices.isNotEmpty()) {
+            // Populate the lists with paired device information
+            for (device: BluetoothDevice in myPairedDevices) {
                 deviceList.add(device)
                 deviceNameList.add(device.name)
-                Log.i("device"," " +device)
+                Log.i("device", " $device")
             }
+        } else {
+            Toast.makeText(this, "No paired devices found", Toast.LENGTH_SHORT).show()
         }
-        else{ Toast.makeText(this, "No paired devices found", Toast.LENGTH_SHORT).show() }
 
-        val my_listAdapter = ArrayAdapter(this,android.R.layout.simple_list_item_1, deviceNameList)
-        binding.lvList.adapter = my_listAdapter
-        binding.lvList.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-            val device: BluetoothDevice = deviceList[position]
-            val address : String = device.address
+        // Create an ArrayAdapter to display the list of paired device names
+        val myListAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, deviceNameList)
+        binding.lvList.adapter = myListAdapter
 
-            val intent = Intent(this, GameActivity::class.java )
-            intent.putExtra(EXTRA_ADDRESS, address)
-            intent.putExtra(HOST_DEVICE, isHost)
-            startActivity(intent)
-        }
+        // Set a click listener for the list items to connect to the selected device
+        binding.lvList.onItemClickListener =
+            AdapterView.OnItemClickListener { _, _, position, _ ->
+                val device: BluetoothDevice = deviceList[position]
+                val address: String = device.address
+
+                // Start the GameActivity with the selected device's address and set as host
+                val intent = Intent(this, GameActivity::class.java)
+                intent.putExtra(EXTRA_ADDRESS, address)
+                intent.putExtra(HOST_DEVICE, isHost)
+                startActivity(intent)
+            }
     }
 
-    private fun hostGame(){
-        isHost=true
+    private fun hostGame() {
+        // Set as the host and start the GameActivity
+        isHost = true
         val intent = Intent(this, GameActivity::class.java)
         intent.putExtra(HOST_DEVICE, isHost)
         startActivity(intent)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
